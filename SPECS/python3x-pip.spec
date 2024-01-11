@@ -19,7 +19,7 @@
 
 Name:           python3x-%{srcname}
 Version:        %{base_version}%{?prerel:~%{prerel}}
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        A tool for installing and managing Python packages
 
 # We bundle a lot of libraries with pip, which itself is under MIT license.
@@ -106,6 +106,14 @@ Patch6:         CVE-2021-3572.patch
 # Tracking bug: https://bugzilla.redhat.com/show_bug.cgi?id=1968074
 # Upstream fix: https://github.com/urllib3/urllib3/commit/2d4a3fee6de2fa45eb82169361918f759269b4ec
 Patch7:         CVE-2021-33503.patch
+
+# CVE-2007-4559, PEP-721, PEP-706: Use tarfile.data_filter for extracting
+# - Minimal downstream-only patch, to be replaced by upstream solution
+#   proposed in https://github.com/pypa/pip/pull/12214
+# - Test patch submitted upstream in the above pull request
+# - Patch for vendored distlib, accepted upstream:
+#   https://github.com/pypa/distlib/pull/201
+Patch8:         cve-2007-4559-tarfile.patch
 
 # Downstream only patch
 # Users might have local installations of pip from using
@@ -290,6 +298,11 @@ sed -i -e 's/csv23/csv/g' tests/lib/wheel.py
 rm -v src/pip/_vendor/distlib/*.exe
 sed -i '/\.exe/d' setup.py
 
+# Backports for Python 2
+rm src/pip/_vendor/distlib/_backport/shutil.py
+rm src/pip/_vendor/distlib/_backport/tarfile.py
+
+
 %build
 %py3_build_wheel
 
@@ -454,6 +467,10 @@ fi
 %{python_wheeldir}/%{python_wheelname}
 
 %changelog
+* Tue Aug 08 2023 Petr Viktorin <pviktori@redhat.com> - 20.2.4-8
+- Use tarfile.data_filter for extracting (CVE-2007-4559, PEP-721, PEP-706)
+Resolves: RHBZ#2218275
+
 * Thu Oct 14 2021 Charalampos Stratakis <cstratak@redhat.com> - 20.2.4-7
 - Remove bundled windows executables
 - Resolves: rhbz#2006790
